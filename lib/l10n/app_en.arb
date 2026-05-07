@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "titleApp": "Flutter Demo",
+  "balance": "Balance",
+  "transactions": "Transactions",
+  "welcome": "Welcome!",
+  "login": "Login",
+  "addressEmail": "Email Address",
+  "password": "Password",
+  "passwordForgot": "Forgot password?",
+  "memberNot": "Not a member?",
+  "nowRegister": "Register now",
+  "withContinueOr": "Or continue with",
+  "dashboard": "Dashboard",
+  "history": "History",
+  "transfers": "Transfers",
+  "settings": "Settings",
+  "language": "Language",
+  "english": "English",
+  "spanish": "Spanish"
+}
