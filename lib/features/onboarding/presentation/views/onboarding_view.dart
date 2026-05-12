@@ -1,56 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/onboarding_provider.dart';
+
 const _backgroundColor = Color(0xFFEAF6FF);
 const _primaryColor = Color(0xFF067DF7);
 const _textColor = Color(0xFF14243D);
 const _mutedTextColor = Color(0xFF6F8197);
 const _cardColor = Color(0xFFDCEEFF);
 const _borderColor = Color(0xFFC4D8EA);
-
-final onboardingControllerProvider =
-    StateNotifierProvider<OnboardingController, OnboardingState>(
-      (ref) => OnboardingController(),
-    );
-
-@immutable
-class OnboardingState {
-  const OnboardingState({
-    this.pageIndex = 0,
-    this.selectedInterests = const {
-      'User Interface',
-      'User Research',
-      'Strategy',
-      'Design Systems',
-    },
-  });
-
-  final int pageIndex;
-  final Set<String> selectedInterests;
-
-  OnboardingState copyWith({int? pageIndex, Set<String>? selectedInterests}) {
-    return OnboardingState(
-      pageIndex: pageIndex ?? this.pageIndex,
-      selectedInterests: selectedInterests ?? this.selectedInterests,
-    );
-  }
-}
-
-class OnboardingController extends StateNotifier<OnboardingState> {
-  OnboardingController() : super(const OnboardingState());
-
-  void setPage(int index) {
-    state = state.copyWith(pageIndex: index);
-  }
-
-  void toggleInterest(String interest) {
-    final updated = {...state.selectedInterests};
-    if (!updated.add(interest)) {
-      updated.remove(interest);
-    }
-    state = state.copyWith(selectedInterests: updated);
-  }
-}
 
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
@@ -170,21 +128,11 @@ class IntroOnboardingPage extends ConsumerWidget {
 class InterestOnboardingPage extends ConsumerWidget {
   const InterestOnboardingPage({super.key});
 
-  static const interests = [
-    'User Interface',
-    'User Experience',
-    'User Research',
-    'UX Writing',
-    'User Testing',
-    'Service Design',
-    'Strategy',
-    'Design Systems',
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedInterests = ref.watch(
-      onboardingControllerProvider.select((state) => state.selectedInterests),
+    final interests = ref.watch(onboardingInterestsProvider);
+    final selectedInterestIds = ref.watch(
+      onboardingControllerProvider.select((state) => state.selectedInterestIds),
     );
 
     return Padding(
@@ -220,12 +168,12 @@ class InterestOnboardingPage extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final interest = interests[index];
                 return _InterestTile(
-                  label: interest,
-                  selected: selectedInterests.contains(interest),
+                  label: interest.name,
+                  selected: selectedInterestIds.contains(interest.id),
                   onTap:
                       () => ref
                           .read(onboardingControllerProvider.notifier)
-                          .toggleInterest(interest),
+                          .toggleInterest(interest.id),
                 );
               },
               separatorBuilder: (_, __) => const SizedBox(height: 10),
