@@ -4,15 +4,30 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/ecommerce_provider.dart';
 
-class ProductDetailView extends ConsumerWidget {
+const _primaryColor = Color(0xFF067DF7);
+const _imageBackgroundColor = Color(0xFFEAF2FF);
+const _textColor = Color(0xFF202124);
+
+class ProductDetailView extends ConsumerStatefulWidget {
   const ProductDetailView({required this.productId, super.key});
 
   final String productId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProductDetailView> createState() => _ProductDetailViewState();
+}
+
+class _ProductDetailViewState extends ConsumerState<ProductDetailView> {
+  String? _selectedSize;
+  int _selectedColorIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final products = ref.watch(ecommerceProductsProvider);
-    final product = products.firstWhere((product) => product.id == productId);
+    final product = products.firstWhere(
+      (product) => product.id == widget.productId,
+    );
+    _selectedSize ??= product.sizes.first;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,22 +56,71 @@ class ProductDetailView extends ConsumerWidget {
             const SizedBox(height: 24),
             Text(
               product.name,
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: _textColor,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
             ),
             const SizedBox(height: 8),
             Text('EUR ${product.price.toStringAsFixed(2)}'),
             const SizedBox(height: 20),
             Text(product.description),
+            const SizedBox(height: 28),
+            Text(
+              'Size',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: _textColor,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _SizeSelector(
+              sizes: product.sizes,
+              selectedSize: _selectedSize!,
+              onSelected: (size) {
+                setState(() {
+                  _selectedSize = size;
+                });
+              },
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Color',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: _textColor,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _ColorSelector(
+              colors: product.colors,
+              selectedIndex: _selectedColorIndex,
+              onSelected: (index) {
+                setState(() {
+                  _selectedColorIndex = index;
+                });
+              },
+            ),
             const Spacer(),
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: FilledButton.icon(
                 onPressed: () {
-                  ref
-                      .read(ecommerceControllerProvider.notifier)
-                      .addToCart(product);
+                  ref.read(ecommerceControllerProvider.notifier)
+                  .addToCart(product);
                   context.goNamed('ecommerce-cart');
                 },
+                style: FilledButton.styleFrom(
+                  backgroundColor: _primaryColor,
+                  foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('Add to bag'),
               ),
@@ -64,6 +128,115 @@ class ProductDetailView extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SizeSelector extends StatelessWidget {
+  const _SizeSelector({
+    required this.sizes,
+    required this.selectedSize,
+    required this.onSelected,
+  });
+
+  final List<String> sizes;
+  final String selectedSize;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children:
+          sizes.map((size) {
+            final isSelected = size == selectedSize;
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: InkWell(
+                onTap: () => onSelected(size),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  height: 28,
+                  alignment: Alignment.center,
+                  constraints: const BoxConstraints(minWidth: 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? _primaryColor : _imageBackgroundColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    size,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : _primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+    );
+  }
+}
+
+class _ColorSelector extends StatelessWidget {
+  const _ColorSelector({
+    required this.colors,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<int> colors;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(colors.length, (index) {
+        final isSelected = index == selectedIndex;
+
+        return Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: InkWell(
+            onTap: () => onSelected(index),
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Color(colors[index]),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                if (isSelected)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: const BoxDecoration(
+                        color: _primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }

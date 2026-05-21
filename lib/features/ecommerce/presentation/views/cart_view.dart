@@ -14,6 +14,7 @@ class CartView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('Your bag'),
         leading: IconButton(
           onPressed: () => context.goNamed('ecommerce-home'),
@@ -68,12 +69,22 @@ class CartView extends ConsumerWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
+              height: 56,
+              
               child: FilledButton(
                 onPressed:
                     state.cartItems.isEmpty
                         ? null
                         : () => context.goNamed('ecommerce-checkout-payment'),
+                 style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF067DF7),
+                  foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                ),
                 child: const Text('Checkout'),
+                
               ),
             ),
           ],

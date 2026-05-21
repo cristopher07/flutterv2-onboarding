@@ -2,10 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/ecommerce_mock_datasource.dart';
+import '../../data/repositories/ecommerce_repository_impl.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/repositories/ecommerce_repository.dart';
 import '../../domain/usecases/add_product_to_cart.dart';
+import '../../domain/usecases/get_payment_methods.dart';
+import '../../domain/usecases/get_products.dart';
 import '../../domain/usecases/select_payment_method.dart';
 import '../../domain/usecases/update_cart_item_quantity.dart';
 
@@ -13,12 +17,26 @@ final ecommerceDatasourceProvider = Provider<EcommerceMockDatasource>(
   (ref) => const EcommerceMockDatasource(),
 );
 
+final ecommerceRepositoryProvider = Provider<EcommerceRepository>((ref) {
+  return EcommerceRepositoryImpl(
+    datasource: ref.watch(ecommerceDatasourceProvider),
+  );
+});
+
+final getProductsProvider = Provider<GetProducts>((ref) {
+  return GetProducts(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
 final ecommerceProductsProvider = Provider<List<Product>>((ref) {
-  return ref.watch(ecommerceDatasourceProvider).getProducts();
+  return ref.watch(getProductsProvider)();
+});
+
+final getPaymentMethodsProvider = Provider<GetPaymentMethods>((ref) {
+  return GetPaymentMethods(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
 final ecommercePaymentMethodsProvider = Provider<List<PaymentMethod>>((ref) {
-  return ref.watch(ecommerceDatasourceProvider).getPaymentMethods();
+  return ref.watch(getPaymentMethodsProvider)();
 });
 
 final ecommerceControllerProvider =

@@ -26,6 +26,15 @@ class EcommerceMockDatasource {
         colors: [0xFF1F2937, 0xFF93C5FD],
       ),
       ProductModel(
+        id: 'fabulous-jeans',
+        name: 'Fabulous Jeans',
+        price: 18,
+        category: 'Perfect for you',
+        description: 'Comfortable jeans with a modern fit for any occasion.',
+        sizes: ['32', '34', '36'],
+        colors: [0xFF1F2937, 0xFF93C5FD],
+      ),
+      ProductModel(
         id: 'spectacular-dress',
         name: 'Spectacular Dress',
         price: 20,
@@ -35,6 +44,16 @@ class EcommerceMockDatasource {
         colors: [0xFFD4AF37, 0xFFE5E7EB],
       ),
       ProductModel(
+        id: 'stunning-jacket',
+        name: 'Stunning Jacket',
+        price: 18,
+        category: 'For this summer',
+        description:
+            'A light jacket that adds structure without feeling heavy.',
+        sizes: ['S', 'M', 'L'],
+        colors: [0xFF60A5FA, 0xFF111827],
+      ),
+       ProductModel(
         id: 'stunning-jacket',
         name: 'Stunning Jacket',
         price: 18,

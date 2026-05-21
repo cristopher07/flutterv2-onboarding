@@ -5,15 +5,19 @@ import '../../features/ecommerce/presentation/views/cart_view.dart';
 import '../../features/ecommerce/presentation/views/checkout_payment_view.dart';
 import '../../features/ecommerce/presentation/views/ecommerce_home_view.dart';
 import '../../features/ecommerce/presentation/views/product_detail_view.dart';
-import '../../features/onboarding/presentation/views/onboarding_view.dart';
+// import '../../features/onboarding/presentation/views/onboarding_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: [
+      // GoRoute(
+      //   path: '/',
+      //   name: 'onboarding',
+      //   builder: (context, state) => const OnboardingView(),
+      // ),
       GoRoute(
-        path: '/',
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingView(),
+        path: '/', 
+        redirect: (context, state) => '/ecommerce'
       ),
       GoRoute(
         path: '/ecommerce',
