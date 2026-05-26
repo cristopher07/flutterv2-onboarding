@@ -99,7 +99,7 @@ EcommerceHomeView
     -> GetProducts
       -> EcommerceRepository
         -> EcommerceRepositoryImpl
-          -> EcommerceMockDatasource
+          -> EcommerceMockDatasource 
             -> ProductModel
 ```
 
@@ -114,3 +114,10 @@ CheckoutPaymentView
   -> EcommerceMockDatasource
   -> PaymentMethodModel
 ```
+
+
+shared prefrences 
+
+es una librería que está usando el maestro para un local storage 
+
+para que sir

@@ -79,7 +79,7 @@ class CartView extends ConsumerWidget {
                  style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF067DF7),
                   foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
+                  shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 ),
