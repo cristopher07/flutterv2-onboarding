@@ -1,6 +1,6 @@
 # Flujo Clean Architecture en E-commerce
 
-Esta feature separa responsabilidades por capas para que la pantalla no dependa directamente de datos mock, API o base de datos.
+Esta feature separa responsabilidades por capas para que las pantallas no dependan directamente de datos mock, API o base de datos.
 
 ## Flujo general
 
@@ -11,99 +11,129 @@ View
   -> Repository abstracto
   -> Repository implementation
   -> Datasource
-  -> Model
+  -> Model con Freezed
 ```
 
-## Ejemplo con productos
-
-La pantalla `EcommerceHomeView` no pide productos directamente al datasource. La pantalla solo lee este provider:
-
-```dart
-final products = ref.watch(ecommerceProductsProvider);
-```
-
-Ese provider llama al caso de uso:
-
-```dart
-final ecommerceProductsProvider = Provider<List<Product>>((ref) {
-  return ref.watch(getProductsProvider)();
-});
-```
-
-El caso de uso vive en `domain/usecases/get_products.dart` y llama al repository abstracto:
-
-```dart
-class GetProducts {
-  const GetProducts({required this.repository});
-
-  final EcommerceRepository repository;
-
-  List<Product> call() {
-    return repository.getProducts();
-  }
-}
-```
-
-El repository abstracto vive en `domain/repositories/ecommerce_repository.dart`. Esta capa solo define lo que la app necesita:
-
-```dart
-abstract class EcommerceRepository {
-  List<Product> getProducts();
-
-  List<PaymentMethod> getPaymentMethods();
-}
-```
-
-La implementación real vive en `data/repositories/ecommerce_repository_impl.dart`:
-
-```dart
-class EcommerceRepositoryImpl implements EcommerceRepository {
-  const EcommerceRepositoryImpl({required this.datasource});
-
-  final EcommerceMockDatasource datasource;
-
-  @override
-  List<Product> getProducts() {
-    return datasource.getProducts();
-  }
-}
-```
-
-Finalmente, el datasource mock vive en `data/datasources/ecommerce_mock_datasource.dart` y devuelve `ProductModel`.
-
-## Por qué hacerlo así
-
-La pantalla no sabe si los productos vienen de mock, API o base de datos. Solo sabe que recibe una lista de `Product`.
-
-Si mañana cambias el mock por una API, normalmente solo cambias la capa `data`, no la pantalla.
-
-## Responsabilidad de cada capa
-
-`presentation`
-
-Pantallas, widgets, providers y controllers. Maneja UI y estado de pantalla.
-
-`domain`
-
-Entidades, casos de uso y contratos. No debe depender de Flutter ni de detalles externos.
-
-`data`
-
-Modelos, datasources e implementaciones de repositories. Aquí viven los detalles de dónde vienen los datos.
-
-## Flujo actual de productos
+## Flujo actual de lectura
 
 ```txt
 EcommerceHomeView
   -> ecommerceProductsProvider
-    -> GetProducts
-      -> EcommerceRepository
-        -> EcommerceRepositoryImpl
-          -> EcommerceMockDatasource 
-            -> ProductModel
+  -> GetProducts
+  -> EcommerceRepository
+  -> EcommerceRepositoryImpl
+  -> EcommerceMockDatasource
+  -> ProductModel
+  -> fromModel()
+  -> Product
 ```
 
-## Flujo actual de métodos de pago
+El datasource devuelve modelos:
+
+```dart
+List<ProductModel> getProducts() {
+  return const [
+    ProductModel(
+      id: 'amazing-tshirt',
+      name: 'Amazing T-shirt',
+      price: 12,
+      category: 'Perfect for you',
+      description: '...',
+      sizes: ['XS', 'S', 'M', 'L', 'XL'],
+      colors: [0xFF202124, 0xFF70727A],
+    ),
+  ];
+}
+```
+
+El repository convierte esos modelos a entidades:
+
+```dart
+@override
+List<Product> getProducts() {
+  return datasource
+      .getProducts()
+      .map((productModel) => productModel.fromModel())
+      .toList();
+}
+```
+
+## Model con Freezed
+
+Los modelos viven en `data/models`. Representan la forma en que llega la data desde una fuente externa o mock.
+
+Ejemplo:
+
+```dart
+@freezed
+abstract class ProductModel with _$ProductModel {
+  const factory ProductModel({
+    required String id,
+    required String name,
+    required double price,
+    required String description,
+    required String category,
+    required List<String> sizes,
+    required List<int> colors,
+  }) = _ProductModel;
+}
+```
+
+`freezed` ayuda a crear modelos inmutables, comparacion por valor y `copyWith`.
+
+## fromModel
+
+`fromModel()` convierte un model de la capa `data` a una entidad de la capa `domain`.
+
+```dart
+extension ProductModelMapper on ProductModel {
+  Product fromModel() {
+    return Product(
+      id: id,
+      name: name,
+      price: price,
+      description: description,
+      category: category,
+      sizes: sizes,
+      colors: colors,
+    );
+  }
+}
+```
+
+La entidad `Product` es la que usa la app por dentro:
+
+```dart
+class Product {
+  const Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.description,
+    required this.category,
+    required this.sizes,
+    required this.colors,
+  });
+
+  final String id;
+  final String name;
+  final double price;
+  final String description;
+  final String category;
+  final List<String> sizes;
+  final List<int> colors;
+}
+```
+
+## Por que el mapper vive en data
+
+La entidad `Product` pertenece a `domain`.
+
+El modelo `ProductModel` pertenece a `data`.
+
+Para mantener clean architecture, `domain` no debe conocer `ProductModel`. Por eso la conversion se hace desde `data`, en el mapper o en el repository implementation.
+
+## Flujo con metodos de pago
 
 ```txt
 CheckoutPaymentView
@@ -113,11 +143,52 @@ CheckoutPaymentView
   -> EcommerceRepositoryImpl
   -> EcommerceMockDatasource
   -> PaymentMethodModel
+  -> fromModel()
+  -> PaymentMethod
 ```
 
+Ejemplo:
 
-shared prefrences 
+```dart
+extension PaymentMethodModelMapper on PaymentMethodModel {
+  PaymentMethod fromModel() {
+    return PaymentMethod(
+      id: id,
+      brand: brand,
+      lastDigits: lastDigits,
+    );
+  }
+}
+```
 
-es una librería que está usando el maestro para un local storage 
+## Responsabilidad de cada capa
 
-para que sir
+`presentation`
+
+Pantallas, widgets, providers y controllers. Maneja UI y estado de pantalla.
+
+`domain`
+
+Entidades, casos de uso y contratos de repositories. No debe depender de Flutter, modelos, API ni storage.
+
+`data`
+
+Modelos con Freezed, datasources, mappers e implementaciones de repositories. Aqui viven los detalles de donde vienen los datos.
+
+## Regla practica
+
+```txt
+Presentation usa Entity
+Domain usa Entity
+Data usa Model y convierte a Entity
+```
+
+La pantalla nunca deberia usar `ProductModel` directamente. Debe recibir `Product`.
+
+## Comando para generar Freezed
+
+Cuando Flutter este disponible en la terminal:
+
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
