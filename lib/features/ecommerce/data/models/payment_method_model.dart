@@ -15,6 +15,17 @@ abstract class PaymentMethodModel with _$PaymentMethodModel {
 
 extension PaymentMethodModelMapper on PaymentMethodModel {
   PaymentMethod fromModel() {
-    return PaymentMethod(id: id, brand: brand, lastDigits: lastDigits);
+    return PaymentMethod(
+      id: id,
+      brand: brand,
+      lastDigits: lastDigits,
+      cardNumber: switch (id) {
+        'visa_low_funds' => '4111111111111111',
+        'visa_mid_funds' => '4242424242424242',
+        'mastercard_high_funds' => '5555555555554444',
+        'declined_card' => '4000000000000002',
+        _ => '',
+      },
+    );
   }
 }

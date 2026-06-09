@@ -53,7 +53,7 @@ class EcommerceMockDatasource {
         sizes: ['S', 'M', 'L'],
         colors: [0xFF60A5FA, 0xFF111827],
       ),
-       ProductModel(
+      ProductModel(
         id: 'stunning-jacket',
         name: 'Stunning Jacket',
         price: 18,
@@ -69,11 +69,25 @@ class EcommerceMockDatasource {
   List<PaymentMethodModel> getPaymentMethods() {
     return const [
       PaymentMethodModel(
-        id: 'mastercard',
-        brand: 'Mastercard',
-        lastDigits: '1234',
+        id: 'visa_mid_funds',
+        brand: 'Visa',
+        lastDigits: '4242',
       ),
-      PaymentMethodModel(id: 'visa', brand: 'Visa', lastDigits: '9876'),
+      PaymentMethodModel(
+        id: 'mastercard_high_funds',
+        brand: 'Mastercard',
+        lastDigits: '4444',
+      ),
+      PaymentMethodModel(
+        id: 'visa_low_funds',
+        brand: 'Visa low funds',
+        lastDigits: '1111',
+      ),
+      PaymentMethodModel(
+        id: 'declined_card',
+        brand: 'Declined card',
+        lastDigits: '0002',
+      ),
     ];
   }
 }

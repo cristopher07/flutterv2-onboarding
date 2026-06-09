@@ -82,7 +82,10 @@ class CheckoutPaymentView extends ConsumerWidget {
             SizedBox(
               height: 52,
               child: FilledButton(
-                onPressed: () {},
+                onPressed:
+                    state.isProcessingPayment
+                        ? null
+                        : () => controller.processSelectedPayment(methods),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF067DF7),
                   foregroundColor: Colors.white,
@@ -90,14 +93,114 @@ class CheckoutPaymentView extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
+                child:
+                    state.isProcessingPayment
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          'Pay now',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
               ),
             ),
+            if (state.paymentResult != null || state.paymentError != null) ...[
+              const SizedBox(height: 14),
+              _PaymentStatusPanel(
+                success: state.paymentResult?.success ?? false,
+                title:
+                    state.paymentResult?.success == true
+                        ? 'Payment approved'
+                        : 'Payment not completed',
+                message: state.paymentResult?.message ?? state.paymentError!,
+                transactionId: state.paymentResult?.transactionId,
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PaymentStatusPanel extends StatelessWidget {
+  const _PaymentStatusPanel({
+    required this.success,
+    required this.title,
+    required this.message,
+    this.transactionId,
+  });
+
+  final bool success;
+  final String title;
+  final String message;
+  final String? transactionId;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = success ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: success ? const Color(0xFFEFFBF3) : const Color(0xFFFEF2F2),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            success ? Icons.check_circle : Icons.error,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: Color(0xFF4B5563),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+                if (transactionId != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    transactionId!,
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

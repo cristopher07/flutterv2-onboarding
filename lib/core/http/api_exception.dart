@@ -1,52 +1,43 @@
-/// Excepciones personalizadas para las llamadas HTTP
+/// Excepciones personalizadas para las llamadas HTTP.
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final dynamic originalError;
 
-  ApiException({
-    required this.message,
-    this.statusCode,
-    this.originalError,
-  });
+  ApiException({required this.message, this.statusCode, this.originalError});
 
   @override
   String toString() => 'ApiException: $message (Status: $statusCode)';
 }
 
 class NetworkException extends ApiException {
-  NetworkException({String message = 'Error de conexión'})
-      : super(message: message);
+  NetworkException({super.message = 'Error de conexion'});
 }
 
 class ServerException extends ApiException {
-  ServerException({
-    required String message,
-    required int statusCode,
-  }) : super(message: message, statusCode: statusCode);
+  ServerException({required super.message, required super.statusCode});
 }
 
 class BadRequestException extends ApiException {
-  BadRequestException({String message = 'Solicitud inválida'})
-      : super(message: message, statusCode: 400);
+  BadRequestException({super.message = 'Solicitud invalida'})
+    : super(statusCode: 400);
 }
 
 class UnauthorizedException extends ApiException {
-  UnauthorizedException({String message = 'No autorizado'})
-      : super(message: message, statusCode: 401);
+  UnauthorizedException({super.message = 'No autorizado'})
+    : super(statusCode: 401);
 }
 
 class ForbiddenException extends ApiException {
-  ForbiddenException({String message = 'Acceso prohibido'})
-      : super(message: message, statusCode: 403);
+  ForbiddenException({super.message = 'Acceso prohibido'})
+    : super(statusCode: 403);
 }
 
 class NotFoundException extends ApiException {
-  NotFoundException({String message = 'Recurso no encontrado'})
-      : super(message: message, statusCode: 404);
+  NotFoundException({super.message = 'Recurso no encontrado'})
+    : super(statusCode: 404);
 }
 
 class TimeoutException extends ApiException {
-  TimeoutException({String message = 'Tiempo de espera agotado'})
-      : super(message: message);
+  TimeoutException({super.message = 'Tiempo de espera agotado'});
 }
