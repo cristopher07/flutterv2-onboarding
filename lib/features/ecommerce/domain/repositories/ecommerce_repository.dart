@@ -3,7 +3,7 @@ import '../entities/payment_result.dart';
 import '../entities/product.dart';
 
 abstract class EcommerceRepository {
-  List<Product> getProducts();
+  Future<List<Product>> getProducts();
 
   List<PaymentMethod> getPaymentMethods();
 

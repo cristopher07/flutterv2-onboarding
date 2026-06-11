@@ -16,7 +16,7 @@ class EcommerceHomeView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final products = ref.watch(ecommerceProductsProvider);
+    final productsAsync = ref.watch(ecommerceProductsProvider);
     final cartItems = ref.watch(
       ecommerceControllerProvider.select((state) => state.cartItems),
     );
@@ -24,15 +24,6 @@ class EcommerceHomeView extends ConsumerWidget {
       0,
       (total, item) => total + item.quantity,
     );
-    final perfectProducts =
-        products
-            .where((product) => product.category == 'Perfect for you')
-            .toList();
-    final summerProducts =
-        products
-            .where((product) => product.category == 'For this summer')
-            .toList();
-
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: EcommerceBottomNavBar(
@@ -42,23 +33,50 @@ class EcommerceHomeView extends ConsumerWidget {
         },
       ),
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            _HomeHeader(
-              cartQuantity: cartQuantity,
-              onCartTap: () => context.goNamed('ecommerce-cart'),
-            ),
-            const _HeroCarousel(),
-            const SizedBox(height: 26),
-            _ProductSection(
-              title: 'Perfect for you',
-              products: perfectProducts,
-            ),
-            const SizedBox(height: 28),
-            _ProductSection(title: 'For this summer', products: summerProducts),
-            const SizedBox(height: 18),
-          ],
+        child: productsAsync.when(
+          data: (products) {
+            final perfectProducts =
+                products
+                    .where((product) => product.category == 'Perfect for you')
+                    .toList();
+            final summerProducts =
+                products
+                    .where((product) => product.category == 'For this summer')
+                    .toList();
+
+            return ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _HomeHeader(
+                  cartQuantity: cartQuantity,
+                  onCartTap: () => context.goNamed('ecommerce-cart'),
+                ),
+                const _HeroCarousel(),
+                const SizedBox(height: 26),
+                _ProductSection(
+                  title: 'Perfect for you',
+                  products: perfectProducts,
+                ),
+                const SizedBox(height: 28),
+                _ProductSection(
+                  title: 'For this summer',
+                  products: summerProducts,
+                ),
+                const SizedBox(height: 18),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error:
+              (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No se pudieron cargar los productos: $error',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
         ),
       ),
     );

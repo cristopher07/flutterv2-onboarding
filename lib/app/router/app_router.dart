@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/views/auth_view.dart';
 import '../../features/ecommerce/presentation/views/cart_view.dart';
 import '../../features/ecommerce/presentation/views/checkout_payment_view.dart';
 import '../../features/ecommerce/presentation/views/ecommerce_home_view.dart';
@@ -8,16 +12,33 @@ import '../../features/ecommerce/presentation/views/product_detail_view.dart';
 // import '../../features/onboarding/presentation/views/onboarding_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final auth = FirebaseAuth.instance;
+
   return GoRouter(
+    refreshListenable: GoRouterRefreshStream(auth.authStateChanges()),
+    redirect: (context, state) {
+      final signedIn = auth.currentUser != null;
+      final isAuthRoute = state.matchedLocation == '/auth';
+
+      if (!signedIn && !isAuthRoute) return '/auth';
+      if (signedIn && isAuthRoute) return '/ecommerce';
+      if (state.matchedLocation == '/') {
+        return signedIn ? '/ecommerce' : '/auth';
+      }
+
+      return null;
+    },
     routes: [
       // GoRoute(
       //   path: '/',
       //   name: 'onboarding',
       //   builder: (context, state) => const OnboardingView(),
       // ),
+      GoRoute(path: '/', redirect: (context, state) => '/ecommerce'),
       GoRoute(
-        path: '/', 
-        redirect: (context, state) => '/ecommerce'
+        path: '/auth',
+        name: 'auth',
+        builder: (context, state) => const AuthView(),
       ),
       GoRoute(
         path: '/ecommerce',
@@ -50,3 +71,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
   );
 });
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}

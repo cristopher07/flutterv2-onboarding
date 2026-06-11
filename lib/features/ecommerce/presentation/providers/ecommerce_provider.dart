@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/http/api_exception.dart';
 import '../../../../core/http/http_client.dart';
+import '../../data/datasources/ecommerce_firestore_datasource.dart';
 import '../../data/datasources/ecommerce_mock_datasource.dart';
 import '../../data/datasources/ecommerce_payment_datasource.dart';
 import '../../data/repositories/ecommerce_repository_impl.dart';
@@ -25,6 +27,10 @@ final ecommerceDatasourceProvider = Provider<EcommerceMockDatasource>(
   (ref) => const EcommerceMockDatasource(),
 );
 
+final ecommerceFirestoreDatasourceProvider = Provider<
+  EcommerceFirestoreDatasource
+>((ref) => EcommerceFirestoreDatasource(firestore: FirebaseFirestore.instance));
+
 final ecommercePaymentDatasourceProvider = Provider<EcommercePaymentDatasource>(
   (ref) =>
       EcommercePaymentDatasource(client: HttpClient(baseUrl: _paymentBaseUrl)),
@@ -32,7 +38,8 @@ final ecommercePaymentDatasourceProvider = Provider<EcommercePaymentDatasource>(
 
 final ecommerceRepositoryProvider = Provider<EcommerceRepository>((ref) {
   return EcommerceRepositoryImpl(
-    datasource: ref.watch(ecommerceDatasourceProvider),
+    firestoreDatasource: ref.watch(ecommerceFirestoreDatasourceProvider),
+    mockDatasource: ref.watch(ecommerceDatasourceProvider),
     paymentDatasource: ref.watch(ecommercePaymentDatasourceProvider),
   );
 });
@@ -41,7 +48,7 @@ final getProductsProvider = Provider<GetProducts>((ref) {
   return GetProducts(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
-final ecommerceProductsProvider = Provider<List<Product>>((ref) {
+final ecommerceProductsProvider = FutureProvider<List<Product>>((ref) {
   return ref.watch(getProductsProvider)();
 });
 
@@ -86,7 +93,7 @@ class EcommerceState {
   final String? paymentError;
 
   double get total {
-    return cartItems.fold(0, (sum, item) => sum + item.subtotal);
+    return cartItems.fold(0, (total, item) => total + item.subtotal);
   }
 
   EcommerceState copyWith({

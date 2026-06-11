@@ -6,7 +6,7 @@ class GetProducts {
 
   final EcommerceRepository repository;
 
-  List<Product> call() {
+  Future<List<Product>> call() {
     return repository.getProducts();
   }
 }

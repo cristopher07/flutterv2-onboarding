@@ -1,6 +1,8 @@
 import 'app/presentation/controllers/locale_controller.dart';
 import 'app/router/app_router.dart';
 import 'core/environmet/env.dart';
+import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,12 +15,9 @@ void main() {
 
 void runProject() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Env.initialize();
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -38,7 +37,8 @@ class _MyAppState extends State<MyApp> {
           builder: (context, ref, child) {
             final router = ref.watch(appRouterProvider);
             return MaterialApp.router(
-              onGenerateTitle: (context) => AppLocalizations.of(context)!.titleApp,
+              onGenerateTitle:
+                  (context) => AppLocalizations.of(context)!.titleApp,
               theme: ThemeData(
                 useMaterial3: true,
                 colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
@@ -60,10 +60,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
-
-
-
-
-
-
