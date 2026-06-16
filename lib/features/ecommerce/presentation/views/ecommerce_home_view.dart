@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/product.dart';
 import 'ecommerce_bottom_nav_bar.dart';
 import '../providers/ecommerce_provider.dart';
@@ -17,6 +18,7 @@ class EcommerceHomeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(ecommerceProductsProvider);
+    final userProfileAsync = ref.watch(userProfileProvider);
     final cartItems = ref.watch(
       ecommerceControllerProvider.select((state) => state.cartItems),
     );
@@ -24,6 +26,12 @@ class EcommerceHomeView extends ConsumerWidget {
       0,
       (total, item) => total + item.quantity,
     );
+
+    Future<void> logOut() async {
+      final auth = ref.read(firebaseAuthProvider);
+      await auth.signOut();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: EcommerceBottomNavBar(
@@ -49,7 +57,9 @@ class EcommerceHomeView extends ConsumerWidget {
               children: [
                 _HomeHeader(
                   cartQuantity: cartQuantity,
+                  userName: userProfileAsync.valueOrNull?.name ?? '',
                   onCartTap: () => context.goNamed('ecommerce-cart'),
+                  onLogoutTap: logOut,
                 ),
                 const _HeroCarousel(),
                 const SizedBox(height: 26),
@@ -84,10 +94,17 @@ class EcommerceHomeView extends ConsumerWidget {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.cartQuantity, required this.onCartTap});
+  const _HomeHeader({
+    required this.cartQuantity,
+    required this.userName,
+    required this.onCartTap,
+    required this.onLogoutTap,
+  });
 
   final int cartQuantity;
+  final String userName;
   final VoidCallback onCartTap;
+  final VoidCallback onLogoutTap;
 
   @override
   Widget build(BuildContext context) {
@@ -122,10 +139,30 @@ class _HomeHeader extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minHeight: 38, minWidth: 38),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  userName.isEmpty ? 'Usuario' : userName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: _textColor,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: () {},
                 icon: const Icon(Icons.favorite_border, size: 29),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minHeight: 38, minWidth: 38),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: onLogoutTap,
+                icon: const Icon(Icons.logout, size: 26),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minHeight: 38, minWidth: 38),
               ),
