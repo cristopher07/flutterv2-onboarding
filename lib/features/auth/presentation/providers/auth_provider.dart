@@ -1,43 +1,64 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../data/datasources/firebase_auth_datasource.dart';
+import '../../data/datasources/user_profile_firestore_datasource.dart';
+import '../../data/repositories/auth_repository_impl.dart';
+import '../../domain/entities/user_profile.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/get_auth_state_changes.dart';
+import '../../domain/usecases/get_current_user_profile.dart';
+import '../../domain/usecases/sign_in.dart';
+import '../../domain/usecases/sign_out.dart';
+import '../../domain/usecases/sign_up.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>(
   (ref) => FirebaseAuth.instance,
 );
 
-final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
-  final auth = ref.watch(firebaseAuthProvider);
-  final user = auth.currentUser;
+final firebaseAuthDatasourceProvider = Provider<FirebaseAuthDatasource>(
+  (ref) => FirebaseAuthDatasource(auth: ref.watch(firebaseAuthProvider)),
+);
 
-  if (user == null) return null;
+final userProfileFirestoreDatasourceProvider =
+    Provider<UserProfileFirestoreDatasource>(
+      (ref) =>
+          UserProfileFirestoreDatasource(firestore: FirebaseFirestore.instance),
+    );
 
-  final userDoc =
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-  final data = userDoc.data();
-
-  final profile = UserProfile(
-    email: data?['email'] as String? ?? user.email ?? '',
-    rol: data?['rol'] as String? ?? '',
-    name: data?['name'] as String? ?? '',
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepositoryImpl(
+    authDatasource: ref.watch(firebaseAuthDatasourceProvider),
+    userProfileDatasource: ref.watch(userProfileFirestoreDatasourceProvider),
   );
-
-  debugPrint('Rol del usuario: ${profile.rol}');
-  debugPrint('Nombre del usuario: ${profile.name}');
-
-  return profile;
 });
 
-@immutable
-class UserProfile {
-  const UserProfile({
-    required this.email,
-    required this.rol,
-    required this.name,
-  });
+final signInProvider = Provider<SignIn>((ref) {
+  return SignIn(repository: ref.watch(authRepositoryProvider));
+});
 
-  final String email;
-  final String rol;
-  final String name;
-}
+final signUpProvider = Provider<SignUp>((ref) {
+  return SignUp(repository: ref.watch(authRepositoryProvider));
+});
+
+final signOutProvider = Provider<SignOut>((ref) {
+  return SignOut(repository: ref.watch(authRepositoryProvider));
+});
+
+final getAuthStateChangesProvider = Provider<GetAuthStateChanges>((ref) {
+  return GetAuthStateChanges(repository: ref.watch(authRepositoryProvider));
+});
+
+final authStateProvider = StreamProvider<bool>((ref) {
+  return ref.watch(getAuthStateChangesProvider)();
+});
+
+final getCurrentUserProfileProvider = Provider<GetCurrentUserProfile>((ref) {
+  return GetCurrentUserProfile(repository: ref.watch(authRepositoryProvider));
+});
+
+final userProfileProvider = FutureProvider<UserProfile?>((ref) {
+  ref.watch(authStateProvider);
+  return ref.watch(getCurrentUserProfileProvider)();
+});

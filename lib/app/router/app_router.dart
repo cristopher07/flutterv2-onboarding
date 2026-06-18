@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/views/auth_view.dart';
 import '../../features/ecommerce/presentation/views/cart_view.dart';
 import '../../features/ecommerce/presentation/views/checkout_payment_view.dart';
@@ -12,12 +12,12 @@ import '../../features/ecommerce/presentation/views/product_detail_view.dart';
 // import '../../features/onboarding/presentation/views/onboarding_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final auth = FirebaseAuth.instance;
+  final authRepository = ref.watch(authRepositoryProvider);
 
   return GoRouter(
-    refreshListenable: GoRouterRefreshStream(auth.authStateChanges()),
+    refreshListenable: GoRouterRefreshStream(authRepository.authStateChanges()),
     redirect: (context, state) {
-      final signedIn = auth.currentUser != null;
+      final signedIn = authRepository.isSignedIn;
       final isAuthRoute = state.matchedLocation == '/auth';
 
       if (!signedIn && !isAuthRoute) return '/auth';

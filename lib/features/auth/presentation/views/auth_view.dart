@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/auth_provider.dart';
 
 const _primaryColor = Color(0xFF067DF7);
@@ -39,27 +38,20 @@ class _AuthViewState extends ConsumerState<AuthView> {
       _errorMessage = null;
     });
 
-    final auth = ref.read(firebaseAuthProvider);
-
     try {
       if (_isRegisterMode) {
-        await auth.createUserWithEmailAndPassword(
+        await ref.read(signUpProvider)(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
       } else {
-        await auth.signInWithEmailAndPassword(
+        await ref.read(signInProvider)(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
       }
 
-      final uid = auth.currentUser!.uid;
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-      final rol = userDoc.data()?['rol'];
-
-      debugPrint('Rol del usuario: $rol');
+      await ref.read(getCurrentUserProfileProvider)();
 
       if (mounted) context.goNamed('ecommerce-home');
     } on FirebaseAuthException catch (error) {

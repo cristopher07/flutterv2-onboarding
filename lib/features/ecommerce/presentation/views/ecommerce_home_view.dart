@@ -28,8 +28,7 @@ class EcommerceHomeView extends ConsumerWidget {
     );
 
     Future<void> logOut() async {
-      final auth = ref.read(firebaseAuthProvider);
-      await auth.signOut();
+      await ref.read(signOutProvider)();
     }
 
     return Scaffold(
