@@ -10,6 +10,7 @@ class Product {
     required this.category,
     required this.sizes,
     required this.colors,
+    this.imageUrl,
   });
 
   final String id;
@@ -19,4 +20,5 @@ class Product {
   final String category;
   final List<String> sizes;
   final List<int> colors;
+  final String? imageUrl;
 }

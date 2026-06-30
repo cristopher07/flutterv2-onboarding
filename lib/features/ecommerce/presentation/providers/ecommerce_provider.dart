@@ -14,10 +14,13 @@ import '../../domain/entities/payment_result.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/ecommerce_repository.dart';
 import '../../domain/usecases/add_product_to_cart.dart';
+import '../../domain/usecases/create_product.dart';
+import '../../domain/usecases/delete_product.dart';
 import '../../domain/usecases/get_payment_methods.dart';
 import '../../domain/usecases/get_products.dart';
 import '../../domain/usecases/process_payment.dart';
 import '../../domain/usecases/select_payment_method.dart';
+import '../../domain/usecases/update_product.dart';
 import '../../domain/usecases/update_cart_item_quantity.dart';
 
 const _paymentBaseUrl = 'https://processpayment-sfdkfoab2q-uc.a.run.app';
@@ -46,6 +49,18 @@ final ecommerceRepositoryProvider = Provider<EcommerceRepository>((ref) {
 
 final getProductsProvider = Provider<GetProducts>((ref) {
   return GetProducts(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final createProductProvider = Provider<CreateProduct>((ref) {
+  return CreateProduct(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final updateProductProvider = Provider<UpdateProduct>((ref) {
+  return UpdateProduct(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final deleteProductProvider = Provider<DeleteProduct>((ref) {
+  return DeleteProduct(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
 final ecommerceProductsProvider = FutureProvider<List<Product>>((ref) {

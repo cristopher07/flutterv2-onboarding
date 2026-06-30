@@ -12,6 +12,7 @@ mixin _$ProductModel {
   String get category;
   List<String> get sizes;
   List<int> get colors;
+  String? get imageUrl;
 
   $ProductModelCopyWith<ProductModel> get copyWith;
 }
@@ -30,6 +31,7 @@ abstract class $ProductModelCopyWith<$Res> {
     String? category,
     List<String>? sizes,
     List<int>? colors,
+    String? imageUrl,
   });
 }
 
@@ -48,6 +50,7 @@ class _$ProductModelCopyWithImpl<$Res> implements $ProductModelCopyWith<$Res> {
     String? category,
     List<String>? sizes,
     List<int>? colors,
+    String? imageUrl,
   }) {
     return _then(
       _ProductModel(
@@ -58,6 +61,7 @@ class _$ProductModelCopyWithImpl<$Res> implements $ProductModelCopyWith<$Res> {
         category: category ?? _value.category,
         sizes: sizes ?? _value.sizes,
         colors: colors ?? _value.colors,
+        imageUrl: imageUrl ?? _value.imageUrl,
       ),
     );
   }
@@ -72,6 +76,7 @@ class _ProductModel implements ProductModel {
     required this.category,
     required this.sizes,
     required this.colors,
+    this.imageUrl,
   });
 
   @override
@@ -88,6 +93,8 @@ class _ProductModel implements ProductModel {
   final List<String> sizes;
   @override
   final List<int> colors;
+  @override
+  final String? imageUrl;
 
   @override
   $ProductModelCopyWith<ProductModel> get copyWith =>
@@ -95,7 +102,7 @@ class _ProductModel implements ProductModel {
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, name: $name, price: $price, description: $description, category: $category, sizes: $sizes, colors: $colors)';
+    return 'ProductModel(id: $id, name: $name, price: $price, description: $description, category: $category, sizes: $sizes, colors: $colors, imageUrl: $imageUrl)';
   }
 
   @override
@@ -109,7 +116,8 @@ class _ProductModel implements ProductModel {
             description == other.description &&
             category == other.category &&
             sizes == other.sizes &&
-            colors == other.colors;
+            colors == other.colors &&
+            imageUrl == other.imageUrl;
   }
 
   @override
@@ -122,5 +130,6 @@ class _ProductModel implements ProductModel {
     category,
     sizes,
     colors,
+    imageUrl,
   );
 }

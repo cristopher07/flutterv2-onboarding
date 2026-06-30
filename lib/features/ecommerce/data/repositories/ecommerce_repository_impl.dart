@@ -27,6 +27,21 @@ class EcommerceRepositoryImpl implements EcommerceRepository {
   }
 
   @override
+  Future<void> createProduct(Product product) {
+    return firestoreDatasource.createProduct(_productToModel(product));
+  }
+
+  @override
+  Future<void> updateProduct(Product product) {
+    return firestoreDatasource.updateProduct(_productToModel(product));
+  }
+
+  @override
+  Future<void> deleteProduct(String productId) {
+    return firestoreDatasource.deleteProduct(productId);
+  }
+
+  @override
   List<PaymentMethod> getPaymentMethods() {
     return mockDatasource
         .getPaymentMethods()
@@ -47,5 +62,18 @@ class EcommerceRepositoryImpl implements EcommerceRepository {
     );
 
     return result.fromModel();
+  }
+
+  ProductModel _productToModel(Product product) {
+    return ProductModel(
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      description: product.description,
+      category: product.category,
+      sizes: product.sizes,
+      colors: product.colors,
+      imageUrl: product.imageUrl,
+    );
   }
 }

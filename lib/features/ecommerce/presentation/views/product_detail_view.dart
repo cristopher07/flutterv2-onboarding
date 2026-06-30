@@ -120,7 +120,7 @@ class _ProductDetailContent extends StatelessWidget {
             height: 240,
             width: double.infinity,
             color: const Color(0xFFEAF2FF),
-            child: const Icon(Icons.image_outlined, size: 42),
+            child: _ProductImage(imageUrl: product.imageUrl),
           ),
           const SizedBox(height: 24),
           Text(
@@ -185,6 +185,34 @@ class _ProductDetailContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      return const Icon(
+        Icons.image_outlined,
+        color: Color(0xFF9ED0FF),
+        size: 42,
+      );
+    }
+
+    return Image.network(
+      imageUrl!,
+      fit: BoxFit.cover,
+      errorBuilder:
+          (_, __, ___) => const Icon(
+            Icons.broken_image_outlined,
+            color: Color(0xFF9ED0FF),
+            size: 42,
+          ),
     );
   }
 }

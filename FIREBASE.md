@@ -204,6 +204,7 @@ products/{documentId}
   category: string
   sizes: array<string>
   colors: array<number>
+  imageUrl: string (opcional)
 ```
 
 Categorias usadas por la app:
@@ -214,6 +215,8 @@ For this summer
 ```
 
 Si `category` no coincide exactamente, el producto se lee desde Firebase pero no aparece en esas secciones.
+
+`imageUrl` debe ser una URL publica de imagen. Cuando existe, la app la carga con `Image.network`; si no existe o falla, muestra un placeholder.
 
 ### `lib/features/ecommerce/data/repositories/ecommerce_repository_impl.dart`
 
@@ -228,6 +231,14 @@ El mock ya no se usa para productos. Se mantiene solo para metodos de pago:
 
 ```dart
 mockDatasource.getPaymentMethods()
+```
+
+El repositorio tambien expone operaciones CRUD para productos:
+
+```dart
+createProduct(product)
+updateProduct(product)
+deleteProduct(productId)
 ```
 
 ### `lib/features/ecommerce/presentation/providers/ecommerce_provider.dart`
@@ -249,6 +260,14 @@ Expone productos como `FutureProvider` porque Firestore responde de forma asincr
 final ecommerceProductsProvider = FutureProvider<List<Product>>((ref) {
   return ref.watch(getProductsProvider)();
 });
+```
+
+Los casos de uso de administracion estan en:
+
+```text
+lib/features/ecommerce/domain/usecases/create_product.dart
+lib/features/ecommerce/domain/usecases/update_product.dart
+lib/features/ecommerce/domain/usecases/delete_product.dart
 ```
 
 ## Consumo en vistas
@@ -278,6 +297,24 @@ Tambien hace logout:
 ```dart
 await ref.read(signOutProvider)();
 ```
+
+### `lib/features/ecommerce/presentation/views/ecommerce_admin_products_view.dart`
+
+Pantalla CRUD disponible solo para usuarios con `rol: admin`.
+
+- Lista productos de Firestore.
+- Crea documentos nuevos en `products`.
+- Edita productos existentes.
+- Elimina productos despues de confirmacion.
+- Permite registrar/editar `imageUrl`.
+
+La navegacion agrega la opcion `Administrar` solo cuando el perfil tiene:
+
+```text
+rol: admin
+```
+
+La pantalla tambien valida el rol al abrir la ruta `/ecommerce/admin/products`; por lo tanto, un usuario `customer` no puede usarla aunque intente escribir la ruta manualmente.
 
 ### `lib/features/ecommerce/presentation/views/product_detail_view.dart`
 

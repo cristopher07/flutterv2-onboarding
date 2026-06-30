@@ -70,21 +70,20 @@ class CartView extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               height: 56,
-              
+
               child: FilledButton(
                 onPressed:
                     state.cartItems.isEmpty
                         ? null
                         : () => context.goNamed('ecommerce-checkout-payment'),
-                 style: FilledButton.styleFrom(
+                style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF067DF7),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('Checkout'),
-                
               ),
             ),
           ],

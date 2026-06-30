@@ -234,11 +234,11 @@ class _AuthViewState extends ConsumerState<AuthView> {
                         color: _surfaceColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Puedes probar con el usuario que creaste en Firebase, por ejemplo test@test.com y contrasena 123456.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(letterSpacing: 0),
-                      ),
+                      // child: const Text(
+                      //   'Puedes probar con el usuario que creaste en Firebase, por ejemplo test@test.com y contrasena 123456.',
+                      //   textAlign: TextAlign.center,
+                      //   style: TextStyle(letterSpacing: 0),
+                      // ),
                     ),
                   ],
                 ),

@@ -4,13 +4,15 @@ class EcommerceBottomNavBar extends StatelessWidget {
   const EcommerceBottomNavBar({
     required this.currentIndex,
     required this.onItemSelected,
+    this.isAdmin = false,
     super.key,
   });
 
   final int currentIndex;
   final ValueChanged<int> onItemSelected;
+  final bool isAdmin;
 
-  static const _items = [
+  static const _baseItems = [
     _EcommerceNavItem(
       label: 'Explore',
       icon: Icons.explore_outlined,
@@ -33,8 +35,16 @@ class EcommerceBottomNavBar extends StatelessWidget {
     ),
   ];
 
+  static const _adminItem = _EcommerceNavItem(
+    label: 'Administrar',
+    icon: Icons.inventory_2_outlined,
+    activeIcon: Icons.inventory_2,
+  );
+
   @override
   Widget build(BuildContext context) {
+    final items = isAdmin ? [..._baseItems, _adminItem] : _baseItems;
+
     return SafeArea(
       top: false,
       child: Container(
@@ -42,13 +52,11 @@ class EcommerceBottomNavBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: const BoxDecoration(
           color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Color(0xFFE8EAF0)),
-          ),
+          border: Border(top: BorderSide(color: Color(0xFFE8EAF0))),
         ),
         child: Row(
-          children: List.generate(_items.length, (index) {
-            final item = _items[index];
+          children: List.generate(items.length, (index) {
+            final item = items[index];
             final isSelected = index == currentIndex;
 
             return Expanded(
@@ -63,9 +71,10 @@ class EcommerceBottomNavBar extends StatelessWidget {
                       Icon(
                         isSelected ? item.activeIcon : item.icon,
                         size: 22,
-                        color: isSelected
-                            ? const Color(0xFF067DF7)
-                            : const Color(0xFFC7CBD6),
+                        color:
+                            isSelected
+                                ? const Color(0xFF067DF7)
+                                : const Color(0xFFC7CBD6),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -73,9 +82,10 @@ class EcommerceBottomNavBar extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isSelected
-                              ? const Color(0xFF202124)
-                              : const Color(0xFF8E929D),
+                          color:
+                              isSelected
+                                  ? const Color(0xFF202124)
+                                  : const Color(0xFF8E929D),
                           fontSize: 11,
                           fontWeight:
                               isSelected ? FontWeight.w700 : FontWeight.w500,

@@ -30,8 +30,36 @@ class EcommerceFirestoreDatasource {
                 .map(_colorFromFirestore)
                 .whereType<int>()
                 .toList(),
+        imageUrl: data['imageUrl'] as String?,
       );
     }).toList();
+  }
+
+  Future<void> createProduct(ProductModel product) {
+    return _firestore.collection('products').add(_productToFirestore(product));
+  }
+
+  Future<void> updateProduct(ProductModel product) {
+    return _firestore
+        .collection('products')
+        .doc(product.id)
+        .update(_productToFirestore(product));
+  }
+
+  Future<void> deleteProduct(String productId) {
+    return _firestore.collection('products').doc(productId).delete();
+  }
+
+  Map<String, dynamic> _productToFirestore(ProductModel product) {
+    return {
+      'name': product.name,
+      'price': product.price,
+      'description': product.description,
+      'category': product.category,
+      'sizes': product.sizes,
+      'colors': product.colors,
+      'imageUrl': product.imageUrl,
+    };
   }
 
   static int? _colorFromFirestore(dynamic value) {

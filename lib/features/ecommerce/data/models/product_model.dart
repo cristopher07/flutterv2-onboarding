@@ -14,6 +14,7 @@ abstract class ProductModel with _$ProductModel {
     required String category,
     required List<String> sizes,
     required List<int> colors,
+    String? imageUrl,
   }) = _ProductModel;
 }
 
@@ -27,6 +28,7 @@ extension ProductModelMapper on ProductModel {
       category: category,
       sizes: sizes,
       colors: colors,
+      imageUrl: imageUrl,
     );
   }
 }

@@ -26,6 +26,7 @@ class EcommerceHomeView extends ConsumerWidget {
       0,
       (total, item) => total + item.quantity,
     );
+    final isAdmin = userProfileAsync.valueOrNull?.rol == 'admin';
 
     Future<void> logOut() async {
       await ref.read(signOutProvider)();
@@ -35,8 +36,12 @@ class EcommerceHomeView extends ConsumerWidget {
       backgroundColor: Colors.white,
       bottomNavigationBar: EcommerceBottomNavBar(
         currentIndex: 0,
+        isAdmin: isAdmin,
         onItemSelected: (index) {
           if (index == 0) return;
+          if (isAdmin && index == 4) {
+            context.goNamed('ecommerce-admin-products');
+          }
         },
       ),
       body: SafeArea(
@@ -352,11 +357,7 @@ class _ProductCard extends StatelessWidget {
                 height: 104,
                 width: double.infinity,
                 color: _imageBackgroundColor,
-                child: const Icon(
-                  Icons.image_outlined,
-                  color: Color(0xFF9ED0FF),
-                  size: 30,
-                ),
+                child: _ProductImage(imageUrl: product.imageUrl, iconSize: 30),
               ),
               Expanded(
                 child: Padding(
@@ -392,6 +393,35 @@ class _ProductCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.imageUrl, required this.iconSize});
+
+  final String? imageUrl;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      return Icon(
+        Icons.image_outlined,
+        color: const Color(0xFF9ED0FF),
+        size: iconSize,
+      );
+    }
+
+    return Image.network(
+      imageUrl!,
+      fit: BoxFit.cover,
+      errorBuilder:
+          (_, __, ___) => Icon(
+            Icons.broken_image_outlined,
+            color: const Color(0xFF9ED0FF),
+            size: iconSize,
+          ),
     );
   }
 }
