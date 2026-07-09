@@ -39,7 +39,11 @@ class EcommerceHomeView extends ConsumerWidget {
         isAdmin: isAdmin,
         onItemSelected: (index) {
           if (index == 0) return;
-          if (isAdmin && index == 4) {
+          if (index == 3) {
+            context.goNamed('ecommerce-purchases');
+            return;
+          }
+          if (isAdmin && index == 5) {
             context.goNamed('ecommerce-admin-products');
           }
         },

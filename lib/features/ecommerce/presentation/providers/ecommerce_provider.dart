@@ -7,14 +7,17 @@ import '../../../../core/http/http_client.dart';
 import '../../data/datasources/ecommerce_firestore_datasource.dart';
 import '../../data/datasources/ecommerce_mock_datasource.dart';
 import '../../data/datasources/ecommerce_payment_datasource.dart';
+import '../../data/datasources/purchase_firestore_datasource.dart';
 import '../../data/repositories/ecommerce_repository_impl.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_result.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/purchase.dart';
 import '../../domain/repositories/ecommerce_repository.dart';
 import '../../domain/usecases/add_product_to_cart.dart';
 import '../../domain/usecases/create_product.dart';
+import '../../domain/usecases/create_purchase.dart';
 import '../../domain/usecases/delete_product.dart';
 import '../../domain/usecases/get_payment_methods.dart';
 import '../../domain/usecases/get_products.dart';
@@ -22,6 +25,8 @@ import '../../domain/usecases/process_payment.dart';
 import '../../domain/usecases/select_payment_method.dart';
 import '../../domain/usecases/update_product.dart';
 import '../../domain/usecases/update_cart_item_quantity.dart';
+import '../../domain/usecases/watch_user_purchases.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 const _paymentBaseUrl = 'https://processpayment-sfdkfoab2q-uc.a.run.app';
 const _unset = Object();
@@ -39,11 +44,16 @@ final ecommercePaymentDatasourceProvider = Provider<EcommercePaymentDatasource>(
       EcommercePaymentDatasource(client: HttpClient(baseUrl: _paymentBaseUrl)),
 );
 
+final purchaseFirestoreDatasourceProvider = Provider<
+  PurchaseFirestoreDatasource
+>((ref) => PurchaseFirestoreDatasource(firestore: FirebaseFirestore.instance));
+
 final ecommerceRepositoryProvider = Provider<EcommerceRepository>((ref) {
   return EcommerceRepositoryImpl(
     firestoreDatasource: ref.watch(ecommerceFirestoreDatasourceProvider),
     mockDatasource: ref.watch(ecommerceDatasourceProvider),
     paymentDatasource: ref.watch(ecommercePaymentDatasourceProvider),
+    purchaseDatasource: ref.watch(purchaseFirestoreDatasourceProvider),
   );
 });
 
@@ -79,6 +89,20 @@ final processPaymentProvider = Provider<ProcessPayment>((ref) {
   return ProcessPayment(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
+final createPurchaseProvider = Provider<CreatePurchase>((ref) {
+  return CreatePurchase(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final watchUserPurchasesProvider = Provider<WatchUserPurchases>((ref) {
+  return WatchUserPurchases(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final userPurchasesProvider = StreamProvider<List<Purchase>>((ref) {
+  final auth = ref.watch(firebaseAuthProvider);
+  final userId = auth.currentUser?.uid ?? '';
+  return ref.watch(watchUserPurchasesProvider)(userId);
+});
+
 final ecommerceControllerProvider =
     StateNotifierProvider<EcommerceController, EcommerceState>(
       (ref) => EcommerceController(
@@ -86,6 +110,7 @@ final ecommerceControllerProvider =
         updateCartItemQuantity: const UpdateCartItemQuantity(),
         selectPaymentMethod: const SelectPaymentMethod(),
         processPayment: ref.watch(processPaymentProvider),
+        createPurchase: ref.watch(createPurchaseProvider),
       ),
     );
 
@@ -144,16 +169,19 @@ class EcommerceController extends StateNotifier<EcommerceState> {
     required UpdateCartItemQuantity updateCartItemQuantity,
     required SelectPaymentMethod selectPaymentMethod,
     required ProcessPayment processPayment,
+    required CreatePurchase createPurchase,
   }) : _addProductToCart = addProductToCart,
        _updateCartItemQuantity = updateCartItemQuantity,
        _selectPaymentMethod = selectPaymentMethod,
        _processPayment = processPayment,
+       _createPurchase = createPurchase,
        super(const EcommerceState());
 
   final AddProductToCart _addProductToCart;
   final UpdateCartItemQuantity _updateCartItemQuantity;
   final SelectPaymentMethod _selectPaymentMethod;
   final ProcessPayment _processPayment;
+  final CreatePurchase _createPurchase;
 
   void addToCart(Product product) {
     state = state.copyWith(
@@ -186,7 +214,11 @@ class EcommerceController extends StateNotifier<EcommerceState> {
     state = state.copyWith(billingSameAsShipping: value);
   }
 
-  Future<void> processSelectedPayment(List<PaymentMethod> methods) async {
+  Future<void> processSelectedPayment(
+    List<PaymentMethod> methods, {
+    required String userId,
+    required String userEmail,
+  }) async {
     final selectedMethod = methods.where(
       (method) => method.id == state.selectedPaymentMethodId,
     );
@@ -195,6 +227,14 @@ class EcommerceController extends StateNotifier<EcommerceState> {
       state = state.copyWith(
         paymentResult: null,
         paymentError: 'Agrega productos al carrito antes de pagar.',
+      );
+      return;
+    }
+
+    if (userId.isEmpty) {
+      state = state.copyWith(
+        paymentResult: null,
+        paymentError: 'Inicia sesión para registrar la compra.',
       );
       return;
     }
@@ -219,8 +259,34 @@ class EcommerceController extends StateNotifier<EcommerceState> {
         paymentMethod: selectedMethod.first,
       );
 
+      if (result.success) {
+        await _createPurchase(
+          Purchase(
+            id: '',
+            userId: userId,
+            userEmail: userEmail,
+            status: 'completed',
+            total: state.total,
+            createdAt: DateTime.now(),
+            items:
+                state.cartItems
+                    .map(
+                      (item) => PurchaseItem(
+                        productId: item.product.id,
+                        name: item.product.name,
+                        price: item.product.price,
+                        quantity: item.quantity,
+                        imageUrl: item.product.imageUrl,
+                      ),
+                    )
+                    .toList(),
+          ),
+        );
+      }
+
       state = state.copyWith(
         isProcessingPayment: false,
+        cartItems: result.success ? const [] : state.cartItems,
         paymentResult: result,
         paymentError: null,
       );

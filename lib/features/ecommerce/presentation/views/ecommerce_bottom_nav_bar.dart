@@ -29,6 +29,11 @@ class EcommerceBottomNavBar extends StatelessWidget {
       activeIcon: Icons.storefront,
     ),
     _EcommerceNavItem(
+      label: 'Compras',
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long,
+    ),
+    _EcommerceNavItem(
       label: 'Profile',
       icon: Icons.person_outline,
       activeIcon: Icons.person,

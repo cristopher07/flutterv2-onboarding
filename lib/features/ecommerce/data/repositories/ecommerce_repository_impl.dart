@@ -1,23 +1,28 @@
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_result.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/purchase.dart';
 import '../../domain/repositories/ecommerce_repository.dart';
 import '../datasources/ecommerce_firestore_datasource.dart';
 import '../datasources/ecommerce_mock_datasource.dart';
 import '../datasources/ecommerce_payment_datasource.dart';
+import '../datasources/purchase_firestore_datasource.dart';
 import '../models/payment_method_model.dart';
 import '../models/product_model.dart';
+import '../models/purchase_model.dart';
 
 class EcommerceRepositoryImpl implements EcommerceRepository {
   const EcommerceRepositoryImpl({
     required this.firestoreDatasource,
     required this.mockDatasource,
     required this.paymentDatasource,
+    required this.purchaseDatasource,
   });
 
   final EcommerceFirestoreDatasource firestoreDatasource;
   final EcommerceMockDatasource mockDatasource;
   final EcommercePaymentDatasource paymentDatasource;
+  final PurchaseFirestoreDatasource purchaseDatasource;
 
   @override
   Future<List<Product>> getProducts() async {
@@ -62,6 +67,18 @@ class EcommerceRepositoryImpl implements EcommerceRepository {
     );
 
     return result.fromModel();
+  }
+
+  @override
+  Future<void> createPurchase(Purchase purchase) {
+    return purchaseDatasource.createPurchase(
+      PurchaseModel.fromEntity(purchase),
+    );
+  }
+
+  @override
+  Stream<List<Purchase>> watchUserPurchases(String userId) {
+    return purchaseDatasource.watchUserPurchases(userId);
   }
 
   ProductModel _productToModel(Product product) {

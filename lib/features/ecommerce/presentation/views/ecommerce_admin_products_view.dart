@@ -63,10 +63,16 @@ class _AdminProductsContent extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: EcommerceBottomNavBar(
-        currentIndex: 4,
+        currentIndex: 5,
         isAdmin: true,
         onItemSelected: (index) {
-          if (index == 0) context.goNamed('ecommerce-home');
+          if (index == 0) {
+            context.goNamed('ecommerce-home');
+            return;
+          }
+          if (index == 3) {
+            context.goNamed('ecommerce-purchases');
+          }
         },
       ),
       floatingActionButton: FloatingActionButton(

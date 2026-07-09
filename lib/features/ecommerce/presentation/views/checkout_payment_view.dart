@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/payment_method.dart';
 import '../providers/ecommerce_provider.dart';
 
@@ -13,6 +14,18 @@ class CheckoutPaymentView extends ConsumerWidget {
     final methods = ref.watch(ecommercePaymentMethodsProvider);
     final state = ref.watch(ecommerceControllerProvider);
     final controller = ref.read(ecommerceControllerProvider.notifier);
+    final auth = ref.watch(firebaseAuthProvider);
+    final user = auth.currentUser;
+
+    ref.listen<EcommerceState>(ecommerceControllerProvider, (previous, next) {
+      final previousTransactionId = previous?.paymentResult?.transactionId;
+      final nextResult = next.paymentResult;
+
+      if (nextResult?.success == true &&
+          nextResult?.transactionId != previousTransactionId) {
+        context.goNamed('ecommerce-purchases');
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFBFF),
@@ -85,7 +98,11 @@ class CheckoutPaymentView extends ConsumerWidget {
                 onPressed:
                     state.isProcessingPayment
                         ? null
-                        : () => controller.processSelectedPayment(methods),
+                        : () => controller.processSelectedPayment(
+                          methods,
+                          userId: user?.uid ?? '',
+                          userEmail: user?.email ?? '',
+                        ),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF067DF7),
                   foregroundColor: Colors.white,

@@ -10,6 +10,7 @@ import '../../features/ecommerce/presentation/views/checkout_payment_view.dart';
 import '../../features/ecommerce/presentation/views/ecommerce_admin_products_view.dart';
 import '../../features/ecommerce/presentation/views/ecommerce_home_view.dart';
 import '../../features/ecommerce/presentation/views/product_detail_view.dart';
+import '../../features/ecommerce/presentation/views/purchases_view.dart';
 // import '../../features/onboarding/presentation/views/onboarding_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -58,6 +59,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/ecommerce/cart',
         name: 'ecommerce-cart',
         builder: (context, state) => const CartView(),
+      ),
+      GoRoute(
+        path: '/ecommerce/purchases',
+        name: 'ecommerce-purchases',
+        builder: (context, state) => const PurchasesView(),
       ),
       GoRoute(
         path: '/ecommerce/admin/products',

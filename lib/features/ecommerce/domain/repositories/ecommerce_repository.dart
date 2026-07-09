@@ -1,6 +1,7 @@
 import '../entities/payment_method.dart';
 import '../entities/payment_result.dart';
 import '../entities/product.dart';
+import '../entities/purchase.dart';
 
 abstract class EcommerceRepository {
   Future<List<Product>> getProducts();
@@ -18,4 +19,8 @@ abstract class EcommerceRepository {
     required PaymentMethod paymentMethod,
     String currency = 'USD',
   });
+
+  Future<void> createPurchase(Purchase purchase);
+
+  Stream<List<Purchase>> watchUserPurchases(String userId);
 }
