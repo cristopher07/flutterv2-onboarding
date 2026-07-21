@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/environmet/env.dart';
 import '../../../../core/http/api_exception.dart';
 import '../../../../core/http/http_client.dart';
 import '../../data/datasources/ecommerce_firestore_datasource.dart';
 import '../../data/datasources/ecommerce_mock_datasource.dart';
 import '../../data/datasources/ecommerce_payment_datasource.dart';
+import '../../data/datasources/product_image_storage_datasource.dart';
 import '../../data/datasources/purchase_firestore_datasource.dart';
 import '../../data/repositories/ecommerce_repository_impl.dart';
 import '../../domain/entities/cart_item.dart';
@@ -25,6 +27,7 @@ import '../../domain/usecases/process_payment.dart';
 import '../../domain/usecases/select_payment_method.dart';
 import '../../domain/usecases/update_product.dart';
 import '../../domain/usecases/update_cart_item_quantity.dart';
+import '../../domain/usecases/upload_product_image.dart';
 import '../../domain/usecases/watch_user_purchases.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -44,6 +47,14 @@ final ecommercePaymentDatasourceProvider = Provider<EcommercePaymentDatasource>(
       EcommercePaymentDatasource(client: HttpClient(baseUrl: _paymentBaseUrl)),
 );
 
+final productImageStorageDatasourceProvider =
+    Provider<ProductImageStorageDatasource>(
+      (ref) => ProductImageStorageDatasource(
+        cloudName: Env.cloudinaryCloudName,
+        uploadPreset: Env.cloudinaryUploadPreset,
+      ),
+    );
+
 final purchaseFirestoreDatasourceProvider = Provider<
   PurchaseFirestoreDatasource
 >((ref) => PurchaseFirestoreDatasource(firestore: FirebaseFirestore.instance));
@@ -53,6 +64,9 @@ final ecommerceRepositoryProvider = Provider<EcommerceRepository>((ref) {
     firestoreDatasource: ref.watch(ecommerceFirestoreDatasourceProvider),
     mockDatasource: ref.watch(ecommerceDatasourceProvider),
     paymentDatasource: ref.watch(ecommercePaymentDatasourceProvider),
+    productImageStorageDatasource: ref.watch(
+      productImageStorageDatasourceProvider,
+    ),
     purchaseDatasource: ref.watch(purchaseFirestoreDatasourceProvider),
   );
 });
@@ -71,6 +85,10 @@ final updateProductProvider = Provider<UpdateProduct>((ref) {
 
 final deleteProductProvider = Provider<DeleteProduct>((ref) {
   return DeleteProduct(repository: ref.watch(ecommerceRepositoryProvider));
+});
+
+final uploadProductImageProvider = Provider<UploadProductImage>((ref) {
+  return UploadProductImage(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
 final ecommerceProductsProvider = FutureProvider<List<Product>>((ref) {

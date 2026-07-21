@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../entities/payment_method.dart';
 import '../entities/payment_result.dart';
 import '../entities/product.dart';
@@ -11,6 +13,13 @@ abstract class EcommerceRepository {
   Future<void> updateProduct(Product product);
 
   Future<void> deleteProduct(String productId);
+
+  Future<String> uploadProductImage({
+    required String productId,
+    required Uint8List bytes,
+    required String fileName,
+    String? contentType,
+  });
 
   List<PaymentMethod> getPaymentMethods();
 

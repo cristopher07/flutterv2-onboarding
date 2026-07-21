@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
- 
+
 enum Environment { development, staging, production }
- 
+
 class Env {
   Env._();
   static Env? _instance;
@@ -12,9 +12,13 @@ class Env {
     return _instance!;
   }
   // Variables
- 
+
   static String get urlBaseApi => _values['apiUrl'] ?? '';
   static String get keyApi => _values['apiKey'] ?? '';
+  static String get cloudinaryCloudName =>
+      _values['cloudinary_cloud_name'] ?? '';
+  static String get cloudinaryUploadPreset =>
+      _values['cloudinary_upload_preset'] ?? '';
   static String get nameApp {
     final nameApp = _values['appName'];
     if (nameApp == null) {
@@ -24,13 +28,13 @@ class Env {
     }
     return _values['appName'] ?? '';
   }
- 
+
   //final String apiBaseUrl;
- 
+
   static Map<String, dynamic> _values = {};
- 
+
   static late final Environment environment;
- 
+
   static Future<void> initialize() async {
     String nameFile;
     switch (environment) {
@@ -46,7 +50,7 @@ class Env {
     }
     _values = await load(nameFile);
   }
- 
+
   static Future<Map<String, dynamic>> load(String nameFile) async {
     // Cargar el archivo JSON correspondiente al entorno
     return rootBundle.loadString(nameFile).then((jsonString) {
@@ -54,4 +58,3 @@ class Env {
     });
   }
 }
- 

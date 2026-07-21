@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/product.dart';
@@ -208,6 +211,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   late final TextEditingController _sizesController;
   late final TextEditingController _colorsController;
   late String _category;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  String? _selectedImageMimeType;
   bool _isSaving = false;
 
   bool get _isEditing => widget.product != null;
@@ -249,21 +255,35 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
     setState(() => _isSaving = true);
 
-    final product = Product(
-      id: widget.product?.id ?? '',
-      name: _nameController.text.trim(),
-      price: double.parse(_priceController.text.trim()),
-      description: _descriptionController.text.trim(),
-      category: _category,
-      imageUrl:
-          _imageUrlController.text.trim().isEmpty
-              ? null
-              : _imageUrlController.text.trim(),
-      sizes: _splitValues(_sizesController.text),
-      colors: _splitValues(_colorsController.text).map(int.parse).toList(),
-    );
+    final productId = widget.product?.id ?? _createProductId();
+    var imageUrl =
+        _imageUrlController.text.trim().isEmpty
+            ? null
+            : _imageUrlController.text.trim();
 
     try {
+      final selectedImageBytes = _selectedImageBytes;
+      final selectedImageName = _selectedImageName;
+      if (selectedImageBytes != null && selectedImageName != null) {
+        imageUrl = await ref.read(uploadProductImageProvider)(
+          productId: productId,
+          bytes: selectedImageBytes,
+          fileName: selectedImageName,
+          contentType: _selectedImageMimeType,
+        );
+      }
+
+      final product = Product(
+        id: productId,
+        name: _nameController.text.trim(),
+        price: double.parse(_priceController.text.trim()),
+        description: _descriptionController.text.trim(),
+        category: _category,
+        imageUrl: imageUrl,
+        sizes: _splitValues(_sizesController.text),
+        colors: _splitValues(_colorsController.text).map(int.parse).toList(),
+      );
+
       if (_isEditing) {
         await ref.read(updateProductProvider)(product);
       } else {
@@ -272,9 +292,95 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
       ref.invalidate(ecommerceProductsProvider);
       if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar el producto: $error')),
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _createProductId() {
+    return 'product_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    final bytes = await image.readAsBytes();
+    if (!mounted) return;
+
+    setState(() {
+      _selectedImageBytes = bytes;
+      _selectedImageName = image.name;
+      _selectedImageMimeType = image.mimeType;
+    });
+  }
+
+  void _clearSelectedImage() {
+    setState(() {
+      _selectedImageBytes = null;
+      _selectedImageName = null;
+      _selectedImageMimeType = null;
+      _imageUrlController.clear();
+    });
+  }
+
+  Widget _buildImagePreview() {
+    final selectedImageBytes = _selectedImageBytes;
+    final currentImageUrl =
+        _imageUrlController.text.trim().isEmpty
+            ? null
+            : _imageUrlController.text.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 180,
+            child:
+                selectedImageBytes != null
+                    ? Image.memory(selectedImageBytes, fit: BoxFit.cover)
+                    : _ProductThumbnail.large(imageUrl: currentImageUrl),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isSaving ? null : _pickImage,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(
+                  selectedImageBytes == null
+                      ? 'Seleccionar imagen'
+                      : 'Cambiar imagen',
+                ),
+              ),
+            ),
+            if (selectedImageBytes != null || currentImageUrl != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Quitar imagen',
+                onPressed: _isSaving ? null : _clearSelectedImage,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
   }
 
   List<String> _splitValues(String value) {
@@ -344,10 +450,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   ],
                   onChanged: (value) => setState(() => _category = value!),
                 ),
+                const SizedBox(height: 16),
+                _buildImagePreview(),
                 TextFormField(
                   controller: _imageUrlController,
                   keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(labelText: 'URL de imagen'),
+                  decoration: const InputDecoration(
+                    labelText: 'URL de imagen',
+                    helperText:
+                        'Se actualiza automaticamente al subir desde galeria.',
+                  ),
                 ),
                 TextFormField(
                   controller: _sizesController,
@@ -402,17 +514,21 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 }
 
 class _ProductThumbnail extends StatelessWidget {
-  const _ProductThumbnail({required this.imageUrl});
+  const _ProductThumbnail({required this.imageUrl}) : size = 54;
+
+  const _ProductThumbnail.large({required this.imageUrl})
+    : size = double.infinity;
 
   final String? imageUrl;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(6),
       child: SizedBox(
-        width: 54,
-        height: 54,
+        width: size,
+        height: size,
         child:
             imageUrl == null || imageUrl!.isEmpty
                 ? const ColoredBox(

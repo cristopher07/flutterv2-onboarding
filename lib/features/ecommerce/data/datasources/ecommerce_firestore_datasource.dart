@@ -36,6 +36,13 @@ class EcommerceFirestoreDatasource {
   }
 
   Future<void> createProduct(ProductModel product) {
+    if (product.id.isNotEmpty) {
+      return _firestore
+          .collection('products')
+          .doc(product.id)
+          .set(_productToFirestore(product));
+    }
+
     return _firestore.collection('products').add(_productToFirestore(product));
   }
 

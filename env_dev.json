@@ -1,4 +1,6 @@
 {
-    "api_url": "https://localhost:3000/api",
-    "appName": "Welcome!"
+  "api_url": "https://localhost:3000/api",
+  "appName": "Welcome!",
+  "cloudinary_cloud_name": "olitrqeu",
+  "cloudinary_upload_preset": "flutter_products"
 }

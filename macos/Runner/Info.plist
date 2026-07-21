@@ -26,6 +26,8 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>La app necesita acceso a tus fotos para seleccionar imagenes de productos.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>
