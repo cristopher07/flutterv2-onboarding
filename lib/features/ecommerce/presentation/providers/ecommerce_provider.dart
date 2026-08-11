@@ -23,6 +23,7 @@ import '../../domain/usecases/create_purchase.dart';
 import '../../domain/usecases/delete_product.dart';
 import '../../domain/usecases/get_payment_methods.dart';
 import '../../domain/usecases/get_products.dart';
+import '../../domain/usecases/get_user_purchases_page.dart';
 import '../../domain/usecases/process_payment.dart';
 import '../../domain/usecases/select_payment_method.dart';
 import '../../domain/usecases/update_product.dart';
@@ -115,10 +116,28 @@ final watchUserPurchasesProvider = Provider<WatchUserPurchases>((ref) {
   return WatchUserPurchases(repository: ref.watch(ecommerceRepositoryProvider));
 });
 
+final getUserPurchasesPageProvider = Provider<GetUserPurchasesPage>((ref) {
+  return GetUserPurchasesPage(
+    repository: ref.watch(ecommerceRepositoryProvider),
+  );
+});
+
 final userPurchasesProvider = StreamProvider<List<Purchase>>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
   final userId = auth.currentUser?.uid ?? '';
   return ref.watch(watchUserPurchasesProvider)(userId);
+});
+
+final paginatedUserPurchasesProvider = StateNotifierProvider.autoDispose<
+  PaginatedUserPurchasesController,
+  PaginatedUserPurchasesState
+>((ref) {
+  ref.watch(authStateProvider);
+  final auth = ref.watch(firebaseAuthProvider);
+  return PaginatedUserPurchasesController(
+    getUserPurchasesPage: ref.watch(getUserPurchasesPageProvider),
+    userId: auth.currentUser?.uid ?? '',
+  )..loadInitial();
 });
 
 final ecommerceControllerProvider =
@@ -178,6 +197,128 @@ class EcommerceState {
               ? this.paymentError
               : paymentError as String?,
     );
+  }
+}
+
+@immutable
+class PaginatedUserPurchasesState {
+  const PaginatedUserPurchasesState({
+    this.purchases = const [],
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.error,
+    this.cursor,
+  });
+
+  final List<Purchase> purchases;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final String? error;
+  final Object? cursor;
+
+  PaginatedUserPurchasesState copyWith({
+    List<Purchase>? purchases,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    Object? error = _unset,
+    Object? cursor = _unset,
+  }) {
+    return PaginatedUserPurchasesState(
+      purchases: purchases ?? this.purchases,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      error: identical(error, _unset) ? this.error : error as String?,
+      cursor: identical(cursor, _unset) ? this.cursor : cursor,
+    );
+  }
+}
+
+class PaginatedUserPurchasesController
+    extends StateNotifier<PaginatedUserPurchasesState> {
+  PaginatedUserPurchasesController({
+    required GetUserPurchasesPage getUserPurchasesPage,
+    required String userId,
+  }) : _getUserPurchasesPage = getUserPurchasesPage,
+       _userId = userId,
+       super(const PaginatedUserPurchasesState());
+
+  static const _pageSize = 5;
+
+  final GetUserPurchasesPage _getUserPurchasesPage;
+  final String _userId;
+
+  Future<void> loadInitial() async {
+    if (state.isLoading) return;
+    if (_userId.isEmpty) {
+      state = const PaginatedUserPurchasesState(hasMore: false);
+      return;
+    }
+
+    state = state.copyWith(
+      purchases: const [],
+      isLoading: true,
+      isLoadingMore: false,
+      hasMore: true,
+      error: null,
+      cursor: null,
+    );
+
+    try {
+      debugPrint('Loading purchases page for user: $_userId');
+      final page = await _getUserPurchasesPage(
+        userId: _userId,
+        pageSize: _pageSize,
+      );
+      debugPrint(
+        'Loaded purchases page: ${page.purchases.length}, '
+        'hasMore: ${page.hasMore}',
+      );
+
+      state = state.copyWith(
+        purchases: page.purchases,
+        isLoading: false,
+        hasMore: page.hasMore,
+        cursor: page.cursor,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        hasMore: false,
+        error: error.toString(),
+      );
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore ||
+        _userId.isEmpty) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingMore: true, error: null);
+
+    try {
+      final page = await _getUserPurchasesPage(
+        userId: _userId,
+        pageSize: _pageSize,
+        cursor: state.cursor,
+      );
+
+      state = state.copyWith(
+        purchases: [...state.purchases, ...page.purchases],
+        isLoadingMore: false,
+        hasMore: page.hasMore,
+        cursor: page.cursor,
+      );
+    } catch (error) {
+      state = state.copyWith(isLoadingMore: false, error: error.toString());
+    }
   }
 }
 

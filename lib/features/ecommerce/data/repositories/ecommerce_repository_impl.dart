@@ -4,6 +4,7 @@ import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_result.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/purchase.dart';
+import '../../domain/entities/purchase_page.dart';
 import '../../domain/repositories/ecommerce_repository.dart';
 import '../datasources/ecommerce_firestore_datasource.dart';
 import '../datasources/ecommerce_mock_datasource.dart';
@@ -101,6 +102,28 @@ class EcommerceRepositoryImpl implements EcommerceRepository {
     return purchaseDatasource.watchUserPurchases(userId);
   }
 
+  @override
+  Future<PurchasePage> getUserPurchasesPage({
+    required String userId,
+    required int pageSize,
+    Object? cursor,
+  }) async {
+    final page = await purchaseDatasource.getUserPurchasesPage(
+      userId: userId,
+      pageSize: pageSize,
+      lastDocument: cursor is PurchaseDocumentCursor ? cursor.document : null,
+    );
+
+    return PurchasePage(
+      purchases: page.purchases,
+      cursor:
+          page.lastDocument == null
+              ? null
+              : PurchaseDocumentCursor(page.lastDocument!),
+      hasMore: page.hasMore,
+    );
+  }
+
   ProductModel _productToModel(Product product) {
     return ProductModel(
       id: product.id,
@@ -113,4 +136,10 @@ class EcommerceRepositoryImpl implements EcommerceRepository {
       imageUrl: product.imageUrl,
     );
   }
+}
+
+class PurchaseDocumentCursor {
+  const PurchaseDocumentCursor(this.document);
+
+  final dynamic document;
 }

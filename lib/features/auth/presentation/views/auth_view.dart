@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/notifications/push_notifications_service.dart';
 import '../providers/auth_provider.dart';
 
 const _primaryColor = Color(0xFF067DF7);
@@ -52,6 +53,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
       }
 
       await ref.read(getCurrentUserProfileProvider)();
+      await PushNotificationsService().initialize();
 
       if (mounted) context.goNamed('ecommerce-home');
     } on FirebaseAuthException catch (error) {

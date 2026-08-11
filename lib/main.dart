@@ -1,7 +1,9 @@
 import 'app/presentation/controllers/locale_controller.dart';
 import 'app/router/app_router.dart';
 import 'core/environmet/env.dart';
+import 'core/notifications/push_notifications_service.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,6 +19,14 @@ void runProject() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Env.initialize();
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      PushNotificationsService().initialize().catchError((error, stackTrace) {
+        debugPrint('Push notifications initialization failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      });
+    }
+  });
   runApp(const ProviderScope(child: MyApp()));
 }
 

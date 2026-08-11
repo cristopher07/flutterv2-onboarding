@@ -7,12 +7,42 @@ import '../../domain/entities/purchase.dart';
 import '../providers/ecommerce_provider.dart';
 import 'ecommerce_bottom_nav_bar.dart';
 
-class PurchasesView extends ConsumerWidget {
+class PurchasesView extends ConsumerStatefulWidget {
   const PurchasesView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final purchasesAsync = ref.watch(userPurchasesProvider);
+  ConsumerState<PurchasesView> createState() => _PurchasesViewState();
+}
+
+class _PurchasesViewState extends ConsumerState<PurchasesView> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_loadMoreNearBottom);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_loadMoreNearBottom)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _loadMoreNearBottom() {
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      ref.read(paginatedUserPurchasesProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final purchasesState = ref.watch(paginatedUserPurchasesProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
     final isAdmin = userProfileAsync.valueOrNull?.rol == 'admin';
 
@@ -41,32 +71,146 @@ class PurchasesView extends ConsumerWidget {
           }
         },
       ),
-      body: purchasesAsync.when(
-        data: (purchases) {
-          if (purchases.isEmpty) {
-            return const _EmptyPurchases();
+      body: _PurchasesBody(
+        controller: _scrollController,
+        state: purchasesState,
+        onRefresh:
+            () =>
+                ref.read(paginatedUserPurchasesProvider.notifier).loadInitial(),
+        onLoadMore:
+            () => ref.read(paginatedUserPurchasesProvider.notifier).loadMore(),
+      ),
+    );
+  }
+}
+
+class _PurchasesBody extends StatelessWidget {
+  const _PurchasesBody({
+    required this.controller,
+    required this.state,
+    required this.onRefresh,
+    required this.onLoadMore,
+  });
+
+  final ScrollController controller;
+  final PaginatedUserPurchasesState state;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.purchases.isEmpty) {
+      if (state.error != null) {
+        return _PurchasesError(message: state.error!, onRetry: onRefresh);
+      }
+
+      return const _EmptyPurchases();
+    }
+
+    final itemCount =
+        state.purchases.length + (state.hasMore || state.error != null ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: controller,
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        itemBuilder: (context, index) {
+          if (index < state.purchases.length) {
+            return _PurchaseCard(purchase: state.purchases[index]);
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-            itemCount: purchases.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              return _PurchaseCard(purchase: purchases[index]);
-            },
+          if (state.error != null) {
+            return _InlineLoadError(message: state.error!, onRetry: onLoadMore);
+          }
+
+          return _LoadMoreIndicator(
+            isLoading: state.isLoadingMore,
+            onPressed: onLoadMore,
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (error, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No se pudieron cargar las compras: $error',
-                  textAlign: TextAlign.center,
-                ),
-              ),
+      ),
+    );
+  }
+}
+
+class _PurchasesError extends StatelessWidget {
+  const _PurchasesError({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'No se pudieron cargar las compras: $message',
+              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Intentar de nuevo'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineLoadError extends StatelessWidget {
+  const _InlineLoadError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'No se pudo cargar la siguiente pagina: $message',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+      ],
+    );
+  }
+}
+
+class _LoadMoreIndicator extends StatelessWidget {
+  const _LoadMoreIndicator({required this.isLoading, required this.onPressed});
+
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Center(
+      child: TextButton(
+        onPressed: onPressed,
+        child: const Text('Cargar mas compras'),
       ),
     );
   }

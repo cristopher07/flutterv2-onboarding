@@ -4,6 +4,7 @@ import '../entities/payment_method.dart';
 import '../entities/payment_result.dart';
 import '../entities/product.dart';
 import '../entities/purchase.dart';
+import '../entities/purchase_page.dart';
 
 abstract class EcommerceRepository {
   Future<List<Product>> getProducts();
@@ -32,4 +33,10 @@ abstract class EcommerceRepository {
   Future<void> createPurchase(Purchase purchase);
 
   Stream<List<Purchase>> watchUserPurchases(String userId);
+
+  Future<PurchasePage> getUserPurchasesPage({
+    required String userId,
+    required int pageSize,
+    Object? cursor,
+  });
 }
